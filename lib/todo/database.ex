@@ -2,7 +2,7 @@ defmodule Todo.Database do
   @pool_size 3
   @db_folder "./persist" # equivalent to a constant property
 
-  def start_link() do
+  def start_link() do # called by Supervisor in Todo.System
     IO.puts("Starting database server")
 
     File.mkdir_p!(@db_folder)
@@ -12,6 +12,7 @@ defmodule Todo.Database do
 
   defp worker_spec(worker_id) do
     default_worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
+    # lets you set unique id for worker, otherwise id would always id would always be Todo.Database (module name)
     Supervisor.child_spec(default_worker_spec, id: worker_id)
   end
 
@@ -38,6 +39,6 @@ defmodule Todo.Database do
   end
 
   defp choose_worker(key) do
-    GenServer.call(__MODULE__, {:choose_worker, key})
+    :erlang.phash2(key, @pool_size) + 1
   end
 end
