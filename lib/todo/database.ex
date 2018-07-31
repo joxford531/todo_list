@@ -7,10 +7,11 @@ defmodule Todo.Database do
 
     File.mkdir_p!(@db_folder)
     children = Enum.map(1..@pool_size, &worker_spec/1)
-    Supervisor.start_link(children, strategy: :one_for_one)
+    Supervisor.start_link(children, strategy: :one_for_one) # supervise db pool workers
   end
 
   defp worker_spec(worker_id) do
+    # since there is a start_link() method in DBWorker, Supervisor will know how to start each worker
     default_worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
     # lets you set unique id for worker, otherwise id would always id would always be Todo.Database (module name)
     Supervisor.child_spec(default_worker_spec, id: worker_id)

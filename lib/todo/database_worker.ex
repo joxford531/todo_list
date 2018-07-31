@@ -12,10 +12,12 @@ defmodule Todo.DatabaseWorker do
   end
 
   def get(worker_id, key) do
+    # call Registry to get the pid of the worker with a specific key
     GenServer.call(via_tuple(worker_id), {:get, key})
   end
 
   defp via_tuple(worker_id) do
+    # define a registered process with a specific key of module name and worker_id
     Todo.ProcessRegistry.via_tuple({__MODULE__, worker_id})
   end
 
