@@ -40,7 +40,7 @@ defmodule Todo.DatabaseWorker do
       case File.read(file_name(db_folder, key)) do
         {:ok, contents} ->
           :erlang.binary_to_term(contents)
-        _ -> nil
+        {:error, :enoent} -> nil # only handle no such fille error otherwise let it crash and have the Supervisor recover
       end
 
     {:reply, data, db_folder}
