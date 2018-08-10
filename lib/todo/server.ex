@@ -1,6 +1,8 @@
 defmodule Todo.Server do
   use GenServer, restart: :temporary
 
+  @expiry_idle_time :timer.seconds(10)
+
   def start_link(list_name) do
     IO.puts("Starting Todo Server - #{list_name}")
     GenServer.start_link(Todo.Server, list_name, name: via_tuple(list_name))
@@ -8,8 +10,11 @@ defmodule Todo.Server do
 
   @impl true
   def init(list_name) do
-    send(self(), :real_init) # call separate init process as it may be long running
-    {:ok, { list_name, nil } }
+    {
+      :ok,
+      {list_name, Todo.Database.get(list_name) || Todo.List.new()},
+      @expiry_idle_time
+    }
   end
 
   def add_entry(todo_server, %{date: _} = new_entry) do
@@ -44,48 +49,60 @@ defmodule Todo.Server do
   def handle_cast({:add_entry, new_entry}, {list_name, todo_list}) do
     new_list = Todo.List.add_entry(todo_list, new_entry)
     Todo.Database.store(list_name, new_list)
-    {:noreply, {list_name, new_list} }
+    {:noreply, {list_name, new_list}, @expiry_idle_time}
   end
 
   @impl true
   def handle_cast({:update_entry, id, updater_fun}, {list_name, todo_list}) do
     new_list = Todo.List.update_entry(todo_list, id, updater_fun)
     Todo.Database.store(list_name, new_list)
-    {:noreply, {list_name, new_list} }
+    {:noreply, {list_name, new_list}, @expiry_idle_time}
   end
 
   @impl true
   def handle_cast({:update_entry, entry}, {list_name, todo_list}) do
     new_list = Todo.List.update_entry(todo_list, entry)
     Todo.Database.store(list_name, new_list)
-    {:noreply, {list_name, new_list} }
+    {:noreply, {list_name, new_list}, @expiry_idle_time}
   end
 
   @impl true
   def handle_cast({:delete_entry, entry_id}, {list_name, todo_list}) do
     new_list = Todo.List.delete_entry(todo_list, entry_id)
     Todo.Database.store(list_name, new_list)
-    {:noreply, {list_name, new_list} }
+    {:noreply, {list_name, new_list}, @expiry_idle_time}
   end
 
   @impl true
   def handle_call({:entries, date}, _, {list_name, todo_list}) do
-    {:reply, Todo.List.entries(todo_list, date), {list_name, todo_list} }
+    {
+      :reply,
+      Todo.List.entries(todo_list, date),
+      {list_name, todo_list},
+      @expiry_idle_time
+    }
   end
 
   @impl true
   def handle_call({:entry, id}, _, {list_name, todo_list}) do
-    {:reply, Todo.List.entry(todo_list, id), {list_name, todo_list} }
+    {
+      :reply,
+      Todo.List.entry(todo_list, id),
+      {list_name, todo_list},
+      @expiry_idle_time
+    }
   end
 
   @impl true
-  def handle_info(:real_init, { list_name, _}) do
-    {:noreply, {list_name, Todo.Database.get(list_name) || Todo.List.new() } }
+  def handle_info(:timeout, {list_name, todo_list}) do
+    IO.puts("Stopping to-do server for #{list_name}")
+    {:stop, :normal, {list_name, todo_list}}
   end
 
   @impl true
   def handle_info(unknown_message, state) do
     super(unknown_message, state)
+    {:noreply, state, @expiry_idle_time}
   end
 
 end
