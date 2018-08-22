@@ -13,7 +13,9 @@ defmodule Todo.Database do
   defp worker_spec(worker_id) do
     # since there is a start_link() method in DBWorker, Supervisor will know how to start each worker
     default_worker_spec = {Todo.DatabaseWorker, {@db_folder, worker_id}}
+
     # lets you set unique id for worker, otherwise id would always id would always be Todo.Database (module name)
+    # returns a map of the shape %{id: worker_id, start: {Todo.DatabaseWorker, :start_link, [{@dbfolder, worker_id}] }}
     Supervisor.child_spec(default_worker_spec, id: worker_id)
   end
 

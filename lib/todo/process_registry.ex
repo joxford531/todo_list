@@ -9,7 +9,7 @@ defmodule Todo.ProcessRegistry do
   end
 
   # Because our module doesn't use GenServer or SuperVisor, we must define a child_spec
-  # in order for it to be Supervised
+  # in order for it to be Supervised. We'll use Registry's default while overriding i:d and :start
   def child_spec(_) do
     Supervisor.child_spec(
       Registry,
