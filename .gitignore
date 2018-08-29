@@ -25,3 +25,4 @@ todo_list-*.tar
 /persist/
 
 /.elixir_ls/
+/.vscode/
