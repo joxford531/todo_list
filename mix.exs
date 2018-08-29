@@ -22,7 +22,9 @@ defmodule TodoList.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:poolboy, "~> 1.5"}
+      {:poolboy, "~> 1.5"},
+      {:cowboy, "~> 1.1"},
+      {:plug, "~> 1.4"}
     ]
   end
 end

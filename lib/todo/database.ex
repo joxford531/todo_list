@@ -12,25 +12,27 @@ defmodule Todo.Database do
       [
         name: {:local, __MODULE__},
         worker_module: Todo.DatabaseWorker,
-        size: 3
+        size: @pool_size
       ],
       [@db_folder]
     )
   end
 
   def store(key, data) do
-    key
-    |> choose_worker()
-    |> Todo.DatabaseWorker.store(key, data)
+    :poolboy.transaction(
+      __MODULE__,
+      fn worker_pid -> # poolboy calls this lambda with one of the three worker's pids
+        Todo.DatabaseWorker.store(worker_pid, key, data)
+      end
+    )
   end
 
   def get(key) do
-    key
-    |> choose_worker()
-    |> Todo.DatabaseWorker.get(key)
-  end
-
-  defp choose_worker(key) do
-    :erlang.phash2(key, @pool_size) + 1
+    :poolboy.transaction(
+      __MODULE__,
+      fn worker_pid ->
+        Todo.DatabaseWorker.get(worker_pid, key)
+      end
+    )
   end
 end
