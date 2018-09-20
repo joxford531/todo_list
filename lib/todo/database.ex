@@ -2,8 +2,7 @@ defmodule Todo.Database do
   @pool_size 3
   @db_folder "./persist" # equivalent to a constant property
 
-  # must define child_spec when you want this to be a supervised process and you don't use
-  #Genserver
+  # Poolboy will call Todo.DatabaseWorker.start_link with the argument of @db_folder
   def child_spec(_) do
     File.mkdir_p!(@db_folder)
 

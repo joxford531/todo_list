@@ -1,6 +1,7 @@
 defmodule Todo.Web do
   use Plug.Router
 
+  plug Plug.Logger
   plug :match
   plug :dispatch
 
@@ -45,5 +46,10 @@ defmodule Todo.Web do
     conn
     |> Plug.Conn.put_resp_content_type("text/plain")
     |> Plug.Conn.send_resp(200, "OK")
+  end
+
+  match _ do
+    conn
+    |> Plug.Conn.send_resp(404, "Not Found")
   end
 end
