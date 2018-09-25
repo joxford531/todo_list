@@ -1,6 +1,6 @@
 defmodule Todo.Database do
   @pool_size 3
-  @db_folder "./persist" # equivalent to a constant property
+  @db_folder "./persist" <> "/#{Atom.to_string(Node.self) |> String.split("@") |> Enum.take(1)}"
 
   # Poolboy will call Todo.DatabaseWorker.start_link with the argument of @db_folder
   def child_spec(_) do
@@ -18,6 +18,19 @@ defmodule Todo.Database do
   end
 
   def store(key, data) do
+    {_results, bad_nodes} =
+      :rpc.multicall(
+        __MODULE__,
+        :store_local,
+        [key, data],
+        :timer.seconds(5)
+      )
+
+      Enum.each(bad_nodes, &IO.puts("Store failed on node #{&1}"))
+      :ok
+  end
+
+  def store_local(key, data) do
     :poolboy.transaction(
       __MODULE__,
       fn worker_pid -> # poolboy calls this lambda with one of the three worker's pids
