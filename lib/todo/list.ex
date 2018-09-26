@@ -58,6 +58,13 @@ defmodule Todo.List do
 
   def delete_entry(_, _), do: {:error, :invalid_arguments}
 
+  def all_entries(%Todo.List{} = todo_list) do
+    todo_list.entries
+    |> Enum.map(fn {_, entry} -> entry end)
+  end
+
+  def all_entries(_), do: {:error, :invalid_arguments}
+
   def entries(%Todo.List{} = todo_list, date) do
     todo_list.entries |>
     # Stream.filter turns maps into tuple {key, value}

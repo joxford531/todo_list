@@ -15,6 +15,7 @@ defmodule Todo.Server do
 
   @impl true
   def init(list_name) do
+    IO.puts("Init for #{list_name}")
     {
       :ok,
       {list_name, Todo.Database.get(list_name) || Todo.List.new()},
@@ -36,6 +37,10 @@ defmodule Todo.Server do
 
   def delete_entry(todo_server, entry_id) do
     GenServer.cast(todo_server, {:delete_entry, entry_id})
+  end
+
+  def all_entries(todo_server) do
+    GenServer.call(todo_server, {:all_entries})
   end
 
   def entries(todo_server, date) do
@@ -95,6 +100,16 @@ defmodule Todo.Server do
 
   def handle_call({:swarm, :begin_handoff}, _from, state) do
     {:reply, {:resume, state}, state}
+  end
+
+  @impl true
+  def handle_call({:all_entries}, _, {list_name, todo_list}) do
+    {
+      :reply,
+      Todo.List.all_entries(todo_list),
+      {list_name, todo_list},
+      @expiry_idle_time
+    }
   end
 
   @impl true
