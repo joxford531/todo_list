@@ -24,7 +24,9 @@ defmodule TodoList.MixProject do
     [
       {:poolboy, "~> 1.5"},
       {:cowboy, "~> 1.1"},
-      {:plug, "~> 1.4"}
+      {:plug, "~> 1.4"},
+      {:libcluster, "~> 3.0"},
+      {:swarm, "~> 3.3"}
     ]
   end
 end

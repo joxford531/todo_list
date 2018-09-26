@@ -4,6 +4,21 @@ use Mix.Config
 
 config :todo_list, http_port: 5454
 
+config :logger, level: :debug
+
+config :swarm, node_blacklist: ["debug@127.0.0.1"]
+
+config :libcluster,
+  topologies: [
+    example: [
+      # The selected clustering strategy. Required.
+      strategy: Cluster.Strategy.Epmd,
+      # Configuration for the provided strategy. Optional.
+      config: [hosts: [:"node1@127.0.0.1", :"node2@127.0.0.1"]],
+      connect: {:net_kernel, :connect_node, []},
+    ]
+  ]
+
 import_config "#{Mix.env()}.exs"
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

@@ -1,11 +1,16 @@
 defmodule Todo.Server do
   use GenServer, restart: :temporary
 
-  @expiry_idle_time :timer.seconds(120)
+  @expiry_idle_time :timer.seconds(360)
 
   def start_link(list_name) do
     IO.puts("Starting Todo Server - #{list_name}")
-    GenServer.start_link(Todo.Server, list_name, name: global_name(list_name))
+    Swarm.register_name({__MODULE__, list_name}, __MODULE__, :start, [list_name])
+    #GenServer.start_link(Todo.Server, list_name)
+  end
+
+  def start(list_name) do
+    GenServer.start_link(Todo.Server, list_name)
   end
 
   @impl true
@@ -42,14 +47,22 @@ defmodule Todo.Server do
   end
 
   def whereis(list_name) do
-    case :global.whereis_name({__MODULE__, list_name}) do
+    case Swarm.whereis_name({__MODULE__, list_name}) do
       :undefined -> nil
       pid -> pid
     end
   end
 
-  defp global_name(list_name) do
-    {:global, {__MODULE__, list_name}}
+  # defp global_name(list_name) do
+  #   {:global, {__MODULE__, list_name}}
+  # end
+
+  def handle_cast({:swarm, :end_handoff, _old_state}, state) do
+    {:noreply, state}
+  end
+
+  def handle_cast({:swarm, :resolve_conflict, _other_state}, state) do
+    {:noreply, state}
   end
 
   @impl true
@@ -80,6 +93,10 @@ defmodule Todo.Server do
     {:noreply, {list_name, new_list}, @expiry_idle_time}
   end
 
+  def handle_call({:swarm, :begin_handoff}, _from, state) do
+    {:reply, {:resume, state}, state}
+  end
+
   @impl true
   def handle_call({:entries, date}, _, {list_name, todo_list}) do
     {
@@ -104,6 +121,10 @@ defmodule Todo.Server do
   def handle_info(:timeout, {list_name, todo_list}) do
     IO.puts("Stopping to-do server for #{list_name}")
     {:stop, :normal, {list_name, todo_list}}
+  end
+
+  def handle_info({:swarm, :die}, state) do
+    {:stop, :shutdown, state}
   end
 
   @impl true
